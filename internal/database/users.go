@@ -2,11 +2,16 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+
+	missionErrors "github.com/golang-rennes/mission-observability/errors"
+	"github.com/golang-rennes/mission-observability/logutils"
 )
 
 type UsersStore interface {
 	GetAll(ctx context.Context) ([]User, error)
-	GetByID(ctx context.Context, id int) (User, error)
+	GetByID(ctx context.Context, id int64) (User, error)
 	Create(ctx context.Context, user User) (User, error)
 	Delete(ctx context.Context, id int) error
 }
@@ -17,6 +22,9 @@ type User struct {
 }
 
 func (db *DBClient) GetAll(ctx context.Context) ([]User, error) {
+	logger := logutils.LoggerFromContext(ctx)
+	logger.Info("Getting all users")
+
 	users := []User{}
 	rows, err := db.QueryxContext(ctx, "SELECT id, name FROM users")
 	if err != nil {
@@ -33,9 +41,12 @@ func (db *DBClient) GetAll(ctx context.Context) ([]User, error) {
 	return users, nil
 }
 
-func (db *DBClient) GetByID(ctx context.Context, id int) (User, error) {
+func (db *DBClient) GetByID(ctx context.Context, id int64) (User, error) {
 	var user User
 	err := db.GetContext(ctx, &user, "SELECT id, name FROM users WHERE id = $1", id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return user, missionErrors.NewNotFound(id)
+	}
 	return user, err
 }
 

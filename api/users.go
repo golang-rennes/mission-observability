@@ -2,11 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
 
+	missionErrors "github.com/golang-rennes/mission-observability/errors"
 	"github.com/golang-rennes/mission-observability/internal/database"
+	"github.com/golang-rennes/mission-observability/logutils"
 	"github.com/labstack/echo/v4"
 )
 
@@ -21,38 +24,47 @@ func NewUsers(usersStore database.UsersStore) *Users {
 }
 
 func (u *Users) ListUsers(c echo.Context) error {
+	logger := logutils.LoggerFromContext(c.Request().Context())
+
 	users, err := u.usersStore.GetAll(c.Request().Context())
 	if err != nil {
+		logger.Error(fmt.Sprintf("Unable to get all users : %v", err))
 		return err
 	}
 	return c.JSON(http.StatusOK, users)
 }
 
 func (u *Users) GetUser(c echo.Context) error {
-	// User ID from path `users/:id`
-	userId, err := strconv.Atoi(c.Param("id"))
+	logger := logutils.LoggerFromContext(c.Request().Context())
+
+	userId, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		logger.Warn(fmt.Sprintf("Unable to parse id %s as int64", c.Param("id")))
+		return err
 	}
 
 	user, err := u.usersStore.GetByID(c.Request().Context(), userId)
 	if err != nil {
+		logger.Warn(fmt.Sprintf("Unable to get user: %v", err))
 		return err
 	}
 	return c.JSON(http.StatusOK, user)
 }
 
 func (u *Users) CreateUser(c echo.Context) error {
+	logger := logutils.LoggerFromContext(c.Request().Context())
+
 	var user database.User
 	err := json.NewDecoder(c.Request().Body).Decode(&user)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err)
+		err := missionErrors.NewInvalidUserBody(err)
 		return err
 	}
+
+	logger.Info(fmt.Sprintf("Create user %q", user.Name))
 	user, err = u.usersStore.Create(c.Request().Context(), user)
 	if err != nil {
-		slog.Error("error creating user", "err", err)
-		c.JSON(http.StatusInternalServerError, err)
+		slog.Error(fmt.Sprintf("error creating user : %v", err))
 		return err
 	}
 
@@ -60,7 +72,6 @@ func (u *Users) CreateUser(c echo.Context) error {
 }
 
 func (u *Users) DeleteUser(c echo.Context) error {
-	// User ID from path `users/:id`
 	userId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
