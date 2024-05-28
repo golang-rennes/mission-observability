@@ -3,12 +3,17 @@ package logutils
 import (
 	"context"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+
+	"github.com/Graylog2/go-gelf/gelf"
+	sloggraylog "github.com/samber/slog-graylog/v2"
+	slogmulti "github.com/samber/slog-multi"
 )
 
 type contextKey string
@@ -36,10 +41,19 @@ func LoggerToContext(ctx context.Context, logger *slog.Logger) context.Context {
 }
 
 func LoggerContextMiddleware() echo.MiddlewareFunc {
+	gelfWriter, err := gelf.NewWriter("localhost:12201")
+	if err != nil {
+		log.Fatalf("gelf.NewWriter: %s", err)
+	}
+	fmt.Println("graylog is ok")
+	handler := sloggraylog.Option{Level: slog.LevelDebug, Writer: gelfWriter}.NewGraylogHandler()
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			request := c.Request()
-			logger := LoggerFromContext(request.Context())
+
+			logger := slog.New(slogmulti.Fanout(handler, slog.Default().Handler()))
+
 			now := time.Now()
 			logger = logger.With(
 				"request-id", uuid.New(),
@@ -58,6 +72,8 @@ func LoggerContextMiddleware() echo.MiddlewareFunc {
 			}
 
 			status := c.Response().Status
+
+			logger = logger.With("status", status)
 			logMessage := fmt.Sprintf("%d %s %s", status, request.Method, request.RequestURI)
 			switch {
 			case status >= http.StatusInternalServerError:

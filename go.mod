@@ -12,13 +12,19 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+	github.com/hashicorp/errwrap v1.0.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/samber/lo v1.38.1 // indirect
+	github.com/samber/slog-common v0.16.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
 	golang.org/x/time v0.5.0 // indirect
 )
 
 require (
+	github.com/Graylog2/go-gelf v0.0.0-20170811154226-7ebf4f536d8f
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/echo/v4 v4.12.0
@@ -26,6 +32,8 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mdobak/go-xerrors v0.3.1
+	github.com/samber/slog-graylog/v2 v2.5.0
+	github.com/samber/slog-multi v1.0.3
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
