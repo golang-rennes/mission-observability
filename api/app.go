@@ -9,6 +9,7 @@ import (
 	"github.com/golang-rennes/mission-observability/logutils"
 
 	"github.com/golang-rennes/mission-observability/internal/database"
+	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -23,6 +24,9 @@ func Run(ctx context.Context, config *config.Config) error {
 		router.DefaultHTTPErrorHandler(err, c)
 	}
 	router.Use(logutils.LoggerContextMiddleware())
+
+	router.Use(echoprometheus.NewMiddleware("mission_observability"))
+	router.GET("/metrics", echoprometheus.NewHandler())
 
 	db, err := database.NewDBClient(ctx, config.ConnString)
 	if err != nil {
