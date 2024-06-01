@@ -12,6 +12,8 @@ import (
 	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
+	"go.opentelemetry.io/otel"
 )
 
 func Run(ctx context.Context, config *config.Config) error {
@@ -25,6 +27,7 @@ func Run(ctx context.Context, config *config.Config) error {
 	}
 	router.Use(logutils.LoggerContextMiddleware())
 
+	router.Use(otelecho.Middleware("mission-observability", otelecho.WithTracerProvider(otel.GetTracerProvider()), otelecho.WithPropagators(otel.GetTextMapPropagator())))
 	router.Use(echoprometheus.NewMiddleware("mission_observability"))
 	router.GET("/metrics", echoprometheus.NewHandler())
 

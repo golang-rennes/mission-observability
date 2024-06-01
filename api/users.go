@@ -12,6 +12,7 @@ import (
 	"github.com/golang-rennes/mission-observability/internal/database"
 	"github.com/golang-rennes/mission-observability/logutils"
 	"github.com/labstack/echo/v4"
+	"go.opentelemetry.io/otel"
 )
 
 type Users struct {
@@ -28,16 +29,23 @@ func (u *Users) ListUsersBoum(c echo.Context) error {
 	logger := logutils.LoggerFromContext(c.Request().Context())
 	var err error
 	var users []database.User
+	tracer := otel.GetTracerProvider().Tracer("listUsersBoum")
+	ctx, span := tracer.Start(c.Request().Context(), "starting user boum")
+	defer span.End()
 	for range 200 {
 		go func() {
-			users, err = u.usersStore.GetAll(c.Request().Context())
+			users, err = u.usersStore.GetAll(ctx)
 			if err != nil {
 				logger.Error(fmt.Sprintf("Unable to get all users : %v", err))
 				return
 			}
 		}()
 	}
+	time.Sleep(200 * time.Millisecond)
+
+	_, spanSleep := tracer.Start(ctx, "starting sleep")
 	time.Sleep(5 * time.Second)
+	spanSleep.End()
 	return c.JSON(http.StatusOK, users)
 }
 

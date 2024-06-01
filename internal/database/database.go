@@ -10,6 +10,7 @@ import (
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/uptrace/opentelemetry-go-extra/otelsqlx"
 )
 
 type DBClient struct {
@@ -18,7 +19,7 @@ type DBClient struct {
 
 // const connString = "postgresql://postgres:Password123@localhost:5432/moviesdb?sslmode=disable"
 func NewDBClient(ctx context.Context, connString string) (*DBClient, error) {
-	dbx, err := sqlx.ConnectContext(ctx, "pgx", connString)
+	dbx, err := otelsqlx.ConnectContext(ctx, "pgx", connString)
 	if err != nil {
 		return nil, err
 	}
