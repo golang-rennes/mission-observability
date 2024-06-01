@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	missionErrors "github.com/golang-rennes/mission-observability/errors"
 	"github.com/golang-rennes/mission-observability/internal/database"
@@ -21,6 +22,23 @@ func NewUsers(usersStore database.UsersStore) *Users {
 	return &Users{
 		usersStore: usersStore,
 	}
+}
+
+func (u *Users) ListUsersBoum(c echo.Context) error {
+	logger := logutils.LoggerFromContext(c.Request().Context())
+	var err error
+	var users []database.User
+	for range 200 {
+		go func() {
+			users, err = u.usersStore.GetAll(c.Request().Context())
+			if err != nil {
+				logger.Error(fmt.Sprintf("Unable to get all users : %v", err))
+				return
+			}
+		}()
+	}
+	time.Sleep(5 * time.Second)
+	return c.JSON(http.StatusOK, users)
 }
 
 func (u *Users) ListUsers(c echo.Context) error {

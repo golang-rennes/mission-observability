@@ -43,5 +43,7 @@ func Run(ctx context.Context, config *config.Config) error {
 	router.GET("/users/:id", users.GetUser)
 	router.DELETE("/users/:id", users.DeleteUser)
 
+	router.GET("/connexion_boum", users.ListUsersBoum)
+
 	return router.Start(":8080")
 }

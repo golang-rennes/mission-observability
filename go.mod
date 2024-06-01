@@ -32,6 +32,7 @@ require (
 
 require (
 	github.com/Graylog2/go-gelf v0.0.0-20170811154226-7ebf4f536d8f
+	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/echo-contrib v0.17.1
