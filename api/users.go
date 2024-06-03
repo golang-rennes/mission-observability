@@ -25,6 +25,20 @@ func NewUsers(usersStore database.UsersStore) *Users {
 	}
 }
 
+func (u *Users) FactorialUsers(c echo.Context) error {
+	users := &[]database.User{}
+	createXUsers(90000, users)
+	return c.JSON(http.StatusOK, users)
+}
+
+func createXUsers(x int64, users *[]database.User) {
+	for i := 0; i < int(x); i++ {
+		*users = append(*users, database.User{
+			Name: fmt.Sprintf("user %d", i),
+		})
+	}
+}
+
 func (u *Users) ListUsersBoum(c echo.Context) error {
 	logger := logutils.LoggerFromContext(c.Request().Context())
 	var err error

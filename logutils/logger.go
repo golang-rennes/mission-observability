@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/Graylog2/go-gelf/gelf"
 	sloggraylog "github.com/samber/slog-graylog/v2"
@@ -53,7 +54,7 @@ func LoggerContextMiddleware() echo.MiddlewareFunc {
 			request := c.Request()
 
 			logger := slog.New(slogmulti.Fanout(handler, slog.Default().Handler()))
-
+			traceId := GetTraceID(request.Context())
 			now := time.Now()
 			logger = logger.With(
 				"request-id", uuid.New(),
@@ -62,6 +63,7 @@ func LoggerContextMiddleware() echo.MiddlewareFunc {
 				"params", request.URL.Query(),
 				"path", request.URL.EscapedPath(),
 				"date", now,
+				"trace-id", traceId,
 			)
 			logger.Info(fmt.Sprintf("%s %s", request.Method, request.RequestURI))
 
@@ -87,4 +89,13 @@ func LoggerContextMiddleware() echo.MiddlewareFunc {
 			return nil
 		}
 	}
+}
+
+func GetTraceID(ctx context.Context) string {
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.HasTraceID() {
+		traceID := spanCtx.TraceID()
+		return traceID.String()
+	}
+	return ""
 }

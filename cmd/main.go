@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/golang-rennes/mission-observability/api"
 	"github.com/golang-rennes/mission-observability/config"
+	"github.com/grafana/pyroscope-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -28,7 +30,44 @@ func main() {
 	if err != nil {
 		log.Fatalf("Tracing init error: %s", err)
 	}
+
+	err = setupProfiling()
+	if err != nil {
+		log.Fatalf("Profiling init error: %s", err)
+	}
 	log.Fatal(api.Run(context.Background(), cfg))
+}
+
+func setupProfiling() error {
+	// These 2 lines are only required if you're using mutex or block profiling
+	// Read the explanation below for how to set these rates:
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
+
+	_, err := pyroscope.Start(pyroscope.Config{
+		ApplicationName: "mission-observability",
+
+		ServerAddress: "http://localhost:4040",
+
+		Logger: pyroscope.StandardLogger,
+
+		ProfileTypes: []pyroscope.ProfileType{
+			// these profile types are enabled by default:
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+
+			// these profile types are optional:
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+	})
+	return err
 }
 
 func setupTracing() error {
